@@ -1,0 +1,63 @@
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+.env
+
+# Distribution/dist build
+build/
+dist/
+
+# Egg metadata
+*.egg-info/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# IPython
+profile_default/
+ipython_config.py
+
+# PyInstaller
+dist/
+build/
+*.exe
+
+# Django
+*.log
+*.pot
+*.pyc
+db.sqlite3
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+Pipfile
+
+.idea/
