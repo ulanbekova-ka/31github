@@ -1,6 +1,6 @@
 import cv2
 from deepface import DeepFace
-from telegram import Update
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
 
 TOKEN = '6668204272:AAEB-jUZuEyDuOnDEjaDRJKzYvryJ6Qjw7E'
@@ -15,6 +15,11 @@ async def start(update: Update, context: CallbackContext) -> None:
         fr'Hi {user.mention_markdown_v2()}\!',
         reply_markup=None
     )
+
+
+async def start_question(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text("Hi! I will ask you some questions.")
+    await ask_question(update, context)
 
 
 async def handle_images(update: Update, context: CallbackContext) -> None:
@@ -54,13 +59,40 @@ async def handle_images(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text('Please send an image.')
 
 
+async def ask_question(update: Update, context: CallbackContext) -> None:
+    questions = ["What is your favorite color?", "How often do you exercise?"]
+    for question in questions:
+        await update.message.reply_text(question)
+        context.user_data[question] = ["Green", "Blue", "Pink"]
+
+
+# Function to handle user responses
+async def handle_response(update: Update, context: CallbackContext) -> None:
+    user_response = update.message.text
+    # Process the user's response as needed
+
+
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.PHOTO, handle_images))
+    # application.add_handler(MessageHandler(filters.Regex('Ask me a question'), ask_question))
+    # application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_response))
+    # application.run_polling(allowed_updates=Update.ALL_TYPES)
 
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    menu_buttons = [
+        [KeyboardButton("/start"), KeyboardButton("Option 1")],
+        [KeyboardButton("Option 2"), KeyboardButton("Option 3")]
+    ]
+    reply_markup = ReplyKeyboardMarkup(menu_buttons, resize_keyboard=True)
 
+    with application:
+        application.run_polling()
+        application.bot.send_message(
+            chat_id=6668204272,
+            text="Choose an option:",
+            reply_markup=reply_markup
+        )
 
 if __name__ == '__main__':
     main()
