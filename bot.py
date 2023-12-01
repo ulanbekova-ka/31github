@@ -1,6 +1,6 @@
 import cv2
 from deepface import DeepFace
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
 
 TOKEN = '6668204272:AAEB-jUZuEyDuOnDEjaDRJKzYvryJ6Qjw7E'
@@ -17,9 +17,44 @@ async def start(update: Update, context: CallbackContext) -> None:
     )
 
 
-async def start_question(update: Update, context: CallbackContext) -> None:
+async def start_conversation(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text("Hi! I will ask you some questions.")
     await ask_question(update, context)
+
+
+async def ask_photo(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text('This is the ask_photo command.')
+
+
+async def show_menu(update: Update, context: CallbackContext) -> None:
+    # Define the menu buttons
+    keyboard = [
+        [InlineKeyboardButton("/start", callback_data='start')],
+        [InlineKeyboardButton("/start_conversation", callback_data='start_conversation')],
+        [InlineKeyboardButton("/ask_photo", callback_data='ask_photo')],
+    ]
+
+    # Create the menu markup
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # Send the menu with the buttons
+    await update.message.reply_text('Choose a command:', reply_markup=reply_markup)
+
+
+async def handle_menu_button(update: Update, context: CallbackContext) -> None:
+    # Define the options list
+    options = [
+        "/start",
+        "/start_conversation",
+        "/ask_photo",
+    ]
+
+    # Create a custom keyboard with the options
+    keyboard = [[KeyboardButton(option)] for option in options]
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+
+    # Send the options list as a pop-up when the button is tapped
+    await update.message.reply_text('Choose a command:', reply_markup=reply_markup)
 
 
 async def handle_images(update: Update, context: CallbackContext) -> None:
@@ -66,33 +101,17 @@ async def ask_question(update: Update, context: CallbackContext) -> None:
         context.user_data[question] = ["Green", "Blue", "Pink"]
 
 
-# Function to handle user responses
-async def handle_response(update: Update, context: CallbackContext) -> None:
-    user_response = update.message.text
-    # Process the user's response as needed
-
-
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("start_conversation", start_conversation))
+    application.add_handler(CommandHandler("ask_photo", ask_photo))
+    application.add_handler(CommandHandler("menu", show_menu))
     application.add_handler(MessageHandler(filters.PHOTO, handle_images))
-    # application.add_handler(MessageHandler(filters.Regex('Ask me a question'), ask_question))
-    # application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_response))
-    # application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application.add_handler(MessageHandler(filters.TEXT, handle_menu_button))
 
-    menu_buttons = [
-        [KeyboardButton("/start"), KeyboardButton("Option 1")],
-        [KeyboardButton("Option 2"), KeyboardButton("Option 3")]
-    ]
-    reply_markup = ReplyKeyboardMarkup(menu_buttons, resize_keyboard=True)
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
-    with application:
-        application.run_polling()
-        application.bot.send_message(
-            chat_id=6668204272,
-            text="Choose an option:",
-            reply_markup=reply_markup
-        )
 
 if __name__ == '__main__':
     main()
