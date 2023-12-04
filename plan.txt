@@ -1,0 +1,8 @@
+1. Learn AI basics (algorithms and principles)
+2. Train a model to recognize emotions
+3. Create a set of questions
+4. Learn about telegram bots
+5. Add a db with anime, music, books...
+6. Train a model to give a proper recommendations
+7. Create a web application
+8. Create a mobile app
