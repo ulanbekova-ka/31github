@@ -5,8 +5,9 @@ app = Flask(__name__)
 CORS(app)
 
 questions = [
-    {"id": 1, "question": "What is your favorite color?", "variants": ["blue", "green", "red", "pink"]},
-    {"id": 2, "question": "Who is your favorite character?", "variants": ["Killua", "Gon", "Kurapika", "Hisoka"]}
+    {"id": 1, "question": "What is your favorite color?"},
+    {"id": 2, "question": "Who is your favorite character?"},
+    {"id": 3, "question": "What genre is your favorite?"}
 ]
 
 
