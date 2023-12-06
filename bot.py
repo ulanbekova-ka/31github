@@ -1,7 +1,7 @@
 import cv2
 from deepface import DeepFace
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters, ConversationHandler
 
 TOKEN = '6668204272:AAEB-jUZuEyDuOnDEjaDRJKzYvryJ6Qjw7E'
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -27,33 +27,13 @@ async def ask_photo(update: Update, context: CallbackContext) -> None:
 
 
 async def show_menu(update: Update, context: CallbackContext) -> None:
-    # Define the menu buttons
     keyboard = [
         [InlineKeyboardButton("/start", callback_data='start')],
         [InlineKeyboardButton("/start_conversation", callback_data='start_conversation')],
         [InlineKeyboardButton("/ask_photo", callback_data='ask_photo')],
+        # [InlineKeyboardButton("/ask_me", callback_data='ask_q')],
     ]
-
-    # Create the menu markup
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    # Send the menu with the buttons
-    await update.message.reply_text('Choose a command:', reply_markup=reply_markup)
-
-
-async def handle_menu_button(update: Update, context: CallbackContext) -> None:
-    # Define the options list
-    options = [
-        "/start",
-        "/start_conversation",
-        "/ask_photo",
-    ]
-
-    # Create a custom keyboard with the options
-    keyboard = [[KeyboardButton(option)] for option in options]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
-
-    # Send the options list as a pop-up when the button is tapped
     await update.message.reply_text('Choose a command:', reply_markup=reply_markup)
 
 
@@ -101,6 +81,25 @@ async def ask_question(update: Update, context: CallbackContext) -> None:
         context.user_data[question] = ["Green", "Blue", "Pink"]
 
 
+CHOOSING, ANSWERING = range(2)
+user_answers = {}
+
+
+def ask_q(update: Update, context: CallbackContext) -> int:
+    user = update.message.from_user
+    context.user_data['user_id'] = user.id
+    update.message.reply_text("What's your favorite character?")
+    return CHOOSING
+
+
+def handle_answer(update: Update, context: CallbackContext) -> int:
+    user_id = context.user_data['user_id']
+    user_answer = update.message.text
+    user_answers[user_id] = user_answer
+    update.message.reply_text(f"Your favorite character is {user_answer}")
+    return ConversationHandler.END
+
+
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
@@ -108,7 +107,15 @@ def main() -> None:
     application.add_handler(CommandHandler("ask_photo", ask_photo))
     application.add_handler(CommandHandler("menu", show_menu))
     application.add_handler(MessageHandler(filters.PHOTO, handle_images))
-    application.add_handler(MessageHandler(filters.TEXT, handle_menu_button))
+
+    conversation_handler = ConversationHandler(
+        entry_points=[CommandHandler('ask_me', ask_q)],
+        states={
+            CHOOSING: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer)],
+        },
+        fallbacks=[],
+    )
+    application.add_handler(conversation_handler)
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
