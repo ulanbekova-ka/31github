@@ -1,9 +1,11 @@
+import os
+
 import cv2
 from deepface import DeepFace
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from dotenv import load_dotenv
+from telegram import Update, InlineKeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters, ConversationHandler
 
-TOKEN = '6668204272:AAEB-jUZuEyDuOnDEjaDRJKzYvryJ6Qjw7E'
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 model = DeepFace.build_model("Emotion")
 emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
@@ -101,7 +103,9 @@ def handle_answer(update: Update, context: CallbackContext) -> int:
 
 
 def main() -> None:
-    application = Application.builder().token(TOKEN).build()
+    load_dotenv()
+    token = os.getenv('TELEGRAM_TOKEN')
+    application = Application.builder().token(token).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("start_conversation", start_conversation))
     application.add_handler(CommandHandler("ask_photo", ask_photo))
