@@ -1,5 +1,4 @@
 import os
-
 import cv2
 from deepface import DeepFace
 from dotenv import load_dotenv
@@ -14,29 +13,24 @@ emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutr
 async def start(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     await update.message.reply_markdown_v2(
-        fr'Hi {user.mention_markdown_v2()}\!',
+        fr'Hello, {user.mention_markdown_v2()}\! I am a bot for recommendations of all kinds of media based on your current mood and tastes\. Let\'s start with a small questionnaire to know you better\.',
         reply_markup=None
     )
+    await ask_questions(update, context)
 
 
-async def start_conversation(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text("Hi! I will ask you some questions.")
-    await ask_question(update, context)
-
-
-async def ask_photo(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('This is the ask_photo command.')
-
-
-async def show_menu(update: Update, context: CallbackContext) -> None:
-    keyboard = [
-        [InlineKeyboardButton("/start", callback_data='start')],
-        [InlineKeyboardButton("/start_conversation", callback_data='start_conversation')],
-        [InlineKeyboardButton("/ask_photo", callback_data='ask_photo')],
-        # [InlineKeyboardButton("/ask_me", callback_data='ask_q')],
+async def ask_questions(update: Update, context: CallbackContext) -> None:
+    questions = [
+        "What's your favorite character?",
+        "What is your favorite color?",
+        "What is your favorite book?"
     ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
-    await update.message.reply_text('Choose a command:', reply_markup=reply_markup)
+
+    for question in questions:
+        await update.message.reply_text(question)
+        # You can store the user's answers in context.user_data
+
+    await update.message.reply_text("Thank you! Now I need a photo of your face to detect the current emotion")
 
 
 async def handle_images(update: Update, context: CallbackContext) -> None:
@@ -51,55 +45,36 @@ async def handle_images(update: Update, context: CallbackContext) -> None:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
 
-        emotions_detected = []
-        for (x, y, w, h) in faces:
-            face_roi = gray[y:y + h, x:x + w]
-            resized_face = cv2.resize(face_roi, (48, 48), interpolation=cv2.INTER_AREA)
-            normalized_face = resized_face / 255.0
-            reshaped_face = normalized_face.reshape(1, 48, 48, 1)
-            preds = model.predict(reshaped_face)[0]
-            emotion_idx = preds.argmax()
-            emotion = emotion_labels[emotion_idx]
-            emotions_detected.append(emotion)
+        if len(faces) == 1:
+            emotion = ""
+            for (x, y, w, h) in faces:
+                face_roi = gray[y:y + h, x:x + w]
+                resized_face = cv2.resize(face_roi, (48, 48), interpolation=cv2.INTER_AREA)
+                normalized_face = resized_face / 255.0
+                reshaped_face = normalized_face.reshape(1, 48, 48, 1)
+                preds = model.predict(reshaped_face)[0]
+                emotion_idx = preds.argmax()
+                emotion = emotion_labels[emotion_idx]
+            await update.message.reply_text(f'Emotion detected: {emotion}')
 
-            # Draw rectangle around face and label with predicted emotion
-            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            cv2.putText(image, emotion, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+            await show_media_options(update)
 
-        # Save the image with rectangles
-        output_path = 'image_with_faces.jpg'
-        cv2.imwrite(output_path, image)
-        with open(output_path, 'rb') as photo:
-            await update.message.reply_photo(photo, caption=f'Emotions detected: {", ".join(emotions_detected)}')
+        else:
+            await update.message.reply_text('I need a photo of your face. Make sure there is exactly one face in the photo.')
 
     else:
         await update.message.reply_text('Please send an image.')
 
 
-async def ask_question(update: Update, context: CallbackContext) -> None:
-    questions = ["What is your favorite color?", "How often do you exercise?"]
-    for question in questions:
-        await update.message.reply_text(question)
-        context.user_data[question] = ["Green", "Blue", "Pink"]
-
-
-CHOOSING, ANSWERING = range(2)
-user_answers = {}
-
-
-def ask_q(update: Update, context: CallbackContext) -> int:
-    user = update.message.from_user
-    context.user_data['user_id'] = user.id
-    update.message.reply_text("What's your favorite character?")
-    return CHOOSING
-
-
-def handle_answer(update: Update, context: CallbackContext) -> int:
-    user_id = context.user_data['user_id']
-    user_answer = update.message.text
-    user_answers[user_id] = user_answer
-    update.message.reply_text(f"Your favorite character is {user_answer}")
-    return ConversationHandler.END
+async def show_media_options(update: Update) -> None:
+    # Show media options as buttons
+    keyboard = [
+        [InlineKeyboardButton("/anime", callback_data='anime')],
+        [InlineKeyboardButton("/book", callback_data='book')],
+        [InlineKeyboardButton("/movie", callback_data='movie')],
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+    await update.message.reply_text('Choose a media:', reply_markup=reply_markup)
 
 
 def main() -> None:
@@ -107,19 +82,7 @@ def main() -> None:
     token = os.getenv('TELEGRAM_TOKEN')
     application = Application.builder().token(token).build()
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("start_conversation", start_conversation))
-    application.add_handler(CommandHandler("ask_photo", ask_photo))
-    application.add_handler(CommandHandler("menu", show_menu))
     application.add_handler(MessageHandler(filters.PHOTO, handle_images))
-
-    conversation_handler = ConversationHandler(
-        entry_points=[CommandHandler('ask_me', ask_q)],
-        states={
-            CHOOSING: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer)],
-        },
-        fallbacks=[],
-    )
-    application.add_handler(conversation_handler)
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
