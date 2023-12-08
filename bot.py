@@ -9,6 +9,13 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fronta
 model = DeepFace.build_model("Emotion")
 emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
 
+# Example book database
+book_database = {
+    'angry': ['Book A', 'Book B', 'Book C'],
+    'happy': ['Book X', 'Book Y', 'Book Z'],
+    # Add other emotions and their book recommendations
+}
+
 
 async def start(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
@@ -55,6 +62,7 @@ async def handle_images(update: Update, context: CallbackContext) -> None:
                 preds = model.predict(reshaped_face)[0]
                 emotion_idx = preds.argmax()
                 emotion = emotion_labels[emotion_idx]
+                context.user_data['emotion'] = emotion
             await update.message.reply_text(f'Emotion detected: {emotion}')
 
             await show_media_options(update)
@@ -77,12 +85,28 @@ async def show_media_options(update: Update) -> None:
     await update.message.reply_text('Choose a media:', reply_markup=reply_markup)
 
 
+async def recommend_books(update: Update, context: CallbackContext) -> None:
+    # Retrieve the user's emotion from the context
+    emotion = context.user_data.get('emotion')
+
+    if emotion and emotion in book_database:
+        books = book_database[emotion]
+        if books:
+            book_list = "\n".join(books)
+            await update.message.reply_text(f"Recommended books for {emotion}:\n{book_list}")
+        else:
+            await update.message.reply_text(f"No book recommendations available for {emotion}")
+    else:
+        await update.message.reply_text("Please send your photo to detect the emotion first.")
+
+
 def main() -> None:
     load_dotenv()
     token = os.getenv('TELEGRAM_TOKEN')
     application = Application.builder().token(token).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.PHOTO, handle_images))
+    application.add_handler(CommandHandler('book', recommend_books))
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
