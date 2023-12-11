@@ -1,18 +1,15 @@
 import pandas as pd
-from sklearn.feature_extraction import text
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 
 
 data = pd.read_csv("book_data.csv")
 data = data[["book_title", "book_desc", "book_rating_count"]]
 data = data.sort_values(by="book_rating_count", ascending=False)
-# top_5 = data.head()
-# labels = top_5["book_title"]
-# values = top_5["book_rating_count"]
 
 # recommend by similar description
-feature = data["book_desc"].tolist()
-tfidf = text.TfidfVectorizer(input=feature, stop_words="english")
+feature = data["book_desc"].fillna("").tolist()
+tfidf = TfidfVectorizer(input='content', stop_words="english")
 tfidf_matrix = tfidf.fit_transform(feature)
 similarity = linear_kernel(tfidf_matrix, tfidf_matrix)
 
@@ -28,4 +25,4 @@ def book_recommendation(title, similarity = similarity):
     return data['book_title'].iloc[bookindices]
 
 
-print(book_recommendation("Letters to a Secret Lover"))
+print(book_recommendation("The Hunger Games"))
