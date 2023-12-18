@@ -1,14 +1,32 @@
-from transformers import pipeline
+def load_emotion_lexicon(file_path):
+    lexicon = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            word, emotion, score = line.strip().split('\t')
+            if word not in lexicon:
+                lexicon[word] = {}
+            lexicon[word][emotion] = int(score)
+    return lexicon
 
 
-def detect_basic_emotion(text):
-    classifier = pipeline('ner', model='dbmdz/bert-large-cased-finetuned-conll03-english')
-    entities = classifier(text)
-    entity_labels = [entity['entity'] for entity in entities]
-    basic_emotion = ', '.join(entity_labels)
-    return basic_emotion
+def calculate_emotion_score(text, emotion_lexicon):
+    words = text.split()
+    emotion_scores = {emotion: 0 for emotion in emotion_lexicon[list(emotion_lexicon.keys())[0]].keys()}
+
+    for word in words:
+        if word in emotion_lexicon:
+            for emotion, score in emotion_lexicon[word].items():
+                emotion_scores[emotion] += score
+
+    return emotion_scores
 
 
-example_text = "I am feeling happy and excited!"
-basic_emotion = detect_basic_emotion(example_text)
-print(f"Basic emotions: {basic_emotion}")
+nrc_lexicon_path = 'NRC-Emotion-Lexicon-Wordlevel-v0.92.txt'
+nrc_lexicon = load_emotion_lexicon(nrc_lexicon_path)
+
+text = "I am so happy now!"
+emotion_scores = calculate_emotion_score(text, nrc_lexicon)
+
+print("NRC Emotion Lexicon Scores:")
+for emotion, score in emotion_scores.items():
+    print(f"{emotion}: {score}")
