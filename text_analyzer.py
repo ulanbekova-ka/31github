@@ -30,15 +30,20 @@ nrc_lexicon_path = 'NRC-Emotion-Lexicon-Wordlevel-v0.92.txt'
 nrc_lexicon = load_emotion_lexicon(nrc_lexicon_path)
 
 
-for index, row in book_data.iterrows():
-    book_description = row['book_desc']
-    emotion_scores = calculate_emotion_score(book_description, nrc_lexicon)
+def get_top_books_by_emotion(book_data, emotion, top_n=5):
+    book_emotion_scores = []
 
-    sorted_emotion_scores = sorted(emotion_scores.items(), key=lambda x: x[1], reverse=True)
-    top_3_emotions = sorted_emotion_scores[:3]
+    for index, row in book_data.iterrows():
+        book_description = row['book_desc']
+        emotion_scores = calculate_emotion_score(book_description, nrc_lexicon)
+        book_emotion_scores.append({'book_title': row['book_title'], 'emotion_score': emotion_scores[emotion]})
 
-    print(f"Book Title: {row['book_title']}")
-    print("Top 3 Emotions:")
-    for emotion, score in top_3_emotions:
-        print(f"{emotion}: {score}")
-    print("\n")
+    sorted_books_by_emotion = sorted(book_emotion_scores, key=lambda x: x['emotion_score'], reverse=True)
+
+    print(f"Top {top_n} Books with Highest {emotion.capitalize()} Scores:")
+    for i, book_info in enumerate(sorted_books_by_emotion[:top_n]):
+        print(f"{i + 1}. {book_info['book_title']} - {emotion.capitalize()} Score: {book_info['emotion_score']}")
+
+
+target_emotion = 'fear'
+get_top_books_by_emotion(book_data, target_emotion)
