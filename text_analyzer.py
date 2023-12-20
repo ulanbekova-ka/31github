@@ -36,13 +36,20 @@ def get_top_books_by_emotion(book_data, emotion, top_n=5):
     for index, row in book_data.iterrows():
         book_description = row['book_desc']
         emotion_scores = calculate_emotion_score(book_description, nrc_lexicon)
-        book_emotion_scores.append({'book_title': row['book_title'], 'emotion_score': emotion_scores[emotion]})
+        book_rating = row['book_rating']
 
-    sorted_books_by_emotion = sorted(book_emotion_scores, key=lambda x: x['emotion_score'], reverse=True)
+        if book_rating >= 4:
+            book_emotion_scores.append({
+                'book_title': row['book_title'],
+                'emotion_score': emotion_scores[emotion],
+                'book_rating': book_rating
+            })
 
-    print(f"Top {top_n} Books with Highest {emotion.capitalize()} Scores:")
-    for i, book_info in enumerate(sorted_books_by_emotion[:top_n]):
-        print(f"{i + 1}. {book_info['book_title']} - {emotion.capitalize()} Score: {book_info['emotion_score']}")
+    sorted_books = sorted(book_emotion_scores, key=lambda x: (x['emotion_score'], x['book_rating']), reverse=True)
+
+    print(f"Top {top_n} Books with Highest {emotion.capitalize()} Scores and Ratings:")
+    for i, book_info in enumerate(sorted_books[:top_n]):
+        print(f"{i + 1}. {book_info['book_title']} - {emotion.capitalize()} Score: {book_info['emotion_score']}, Rating: {book_info['book_rating']}")
 
 
 target_emotion = 'fear'
