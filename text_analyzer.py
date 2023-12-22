@@ -37,10 +37,9 @@ def get_top_books_by_emotion_rating_and_genre(book_data, emotion, genre, top_n=5
         book_description = row['book_desc']
         emotion_scores = calculate_emotion_scores(book_description, nrc_lexicon)
         book_rating = row['book_rating']
-        book_genres = str(row['genres'])  # Convert to string to handle NaN values
+        book_genres = str(row['genres'])
 
         if pd.notna(book_rating) and pd.notna(book_genres) and book_rating >= 4:
-            # Check if any genre in the book's genres matches the specified genre
             if any(g.lower() == genre.lower() for g in book_genres.split('|')):
                 book_emotion_scores.append({
                     'book_title': row['book_title'],
@@ -49,17 +48,22 @@ def get_top_books_by_emotion_rating_and_genre(book_data, emotion, genre, top_n=5
                     'book_genres': book_genres
                 })
 
-    # Sort books based on emotion scores, then by book rating, and finally by genre match
     sorted_books = sorted(book_emotion_scores, key=lambda x: (x['emotion_score'], x['book_rating']), reverse=True)
 
-    # Print the top books with the highest emotion scores, ratings, and matching genre
     print(f"Top {top_n} Books with Highest {emotion.capitalize()} Scores, Ratings (Rating >= 4), and Matching Genre ({genre}):")
     for i, book_info in enumerate(sorted_books[:top_n]):
         print(f"{i + 1}. {book_info['book_title']} - {emotion.capitalize()} Score: {book_info['emotion_score']}, Rating: {book_info['book_rating']}, Genres: {book_info['book_genres']}")
 
-# Specify the emotion and genre you want to analyze
-target_emotion = 'sadness'  # Replace with the desired emotion (e.g., 'joy', 'anger', 'surprise', etc.)
-target_genre = 'Dystopia'  # Replace with the desired genre
 
-# Get and print the top books by the specified emotion, highest rating, and matching genre
+target_emotion = 'sadness'
+target_genre = 'Dystopia'
+
 get_top_books_by_emotion_rating_and_genre(book_data, target_emotion, target_genre)
+
+# notes:
+# Happy: anything – whatever feels right to you!
+# Sad: Romance or Upbeat Contemporary Fiction
+# Contemplative: Fantasy, Science Fiction, Literary Fiction, or Non-Fiction
+# Bored: Mystery/Thriller or Horror
+# Relaxed: Classic Literature, Historical Fiction, or Memoir
+# Overwhelmed: Children’s Fiction, Young Adult Fiction, or Short Stories
