@@ -67,3 +67,7 @@ get_top_books_by_emotion_rating_and_genre(book_data, target_emotion, target_genr
 # Bored: Mystery/Thriller or Horror
 # Relaxed: Classic Literature, Historical Fiction, or Memoir
 # Overwhelmed: Children’s Fiction, Young Adult Fiction, or Short Stories
+
+# Traditional recommendation systems often use collaborative filtering or content-based filtering.
+# Collaborative filtering leverages user-item interactions,
+# while content-based filtering recommends items based on their features.
